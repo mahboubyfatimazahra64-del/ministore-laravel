@@ -3,6 +3,7 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CategoryController; // <--- ZID HADI
 use App\Http\Controllers\ProductController;  // <--- ZID HADI
+use App\Http\Controllers\ClientController; // <--- HADI HIA LI KHASSAK DAROURI
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -20,7 +21,7 @@ Route::middleware('auth')->group(function () {
     
     // Les resources dyalk
     Route::resource('categories', CategoryController::class);
-    Route::resource('products', ProductController::class);
-});
+ Route::resource('products', ProductController::class);
+Route::resource('clients', ClientController::class);});
 
 require __DIR__.'/auth.php';
