@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Client extends Model
 {
-    //
+    protected $fillable = ['full_name', 'email', 'phone'];
+
+public function orders() {
+    return $this->hasMany(Order::class);
+}
 }
