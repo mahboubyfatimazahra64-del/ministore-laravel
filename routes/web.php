@@ -1,9 +1,10 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\CategoryController; // <--- ZID HADI
-use App\Http\Controllers\ProductController;  // <--- ZID HADI
-use App\Http\Controllers\ClientController; // <--- HADI HIA LI KHASSAK DAROURI
+use App\Http\Controllers\CategoryController; 
+use App\Http\Controllers\ProductController;  
+use App\Http\Controllers\ClientController; 
+use App\Http\Controllers\OrderController; // <--- Import mzyan
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -14,6 +15,7 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+// Ga3 had l'routes khasshoum ykounou west l'group dial 'auth'
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -21,7 +23,9 @@ Route::middleware('auth')->group(function () {
     
     // Les resources dyalk
     Route::resource('categories', CategoryController::class);
- Route::resource('products', ProductController::class);
-Route::resource('clients', ClientController::class);});
+    Route::resource('products', ProductController::class);
+    Route::resource('clients', ClientController::class);
+    Route::resource('orders', OrderController::class); // <--- Dkhltha west l'group
+}); // <--- Had l'accolade khassha t'koun hna
 
 require __DIR__.'/auth.php';

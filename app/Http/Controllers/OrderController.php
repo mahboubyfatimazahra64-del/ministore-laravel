@@ -2,63 +2,73 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\Client;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $orders = Order::with(['client', 'products'])->latest()->get();
+        return view('orders.index', compact('orders'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        $clients = Client::all();
+        // Hna fin kiban l'mouchkil: ila l'base de données khawya, l'lista ghat'bqa khawya
+        $products = Product::where('quantity', '>', 0)->get();
+        return view('orders.create', compact('clients', 'products'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'client_id' => 'required|exists:clients,id',
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $product = Product::findOrFail($request->product_id);
+
+        if ($product->quantity < $request->quantity) {
+            return back()->with('error', 'Stock insuffisant!');
+        }
+
+        $order = Order::create([
+            'client_id' => $request->client_id,
+            'total_price' => $product->price * $request->quantity
+        ]);
+
+        $order->products()->attach($product->id, [
+            'quantity' => $request->quantity,
+            'price' => $product->price
+        ]);
+
+        $product->decrement('quantity', $request->quantity);
+
+        return redirect()->route('orders.index')->with('success', 'Vente réussie!');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function destroy(Order $order)
     {
-        //
-    }
+        foreach ($order->products as $product) {
+            $product->increment('quantity', $product->pivot->quantity);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
+        $order->delete();
+        return redirect()->route('orders.index')->with('success', 'Vente annulée!');
+    } 
+public function edit(Order $order)
+{
+    $clients = Client::all();
+    $products = Product::all();
+    
+    // Khassna l'order y'koun fih l'produits dyalu bach n'jbdo quantity
+    $order->load('products');
+    
+    return view('orders.edit', compact('order', 'clients', 'products'));
 }
+} // Sddina l'Class hna
