@@ -9,20 +9,22 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    // 1. Afficher l'historique
     public function index()
     {
         $orders = Order::with(['client', 'products'])->latest()->get();
         return view('orders.index', compact('orders'));
     }
 
+    // 2. Formulaire dial Nouvelle Vente
     public function create()
     {
         $clients = Client::all();
-        // Hna fin kiban l'mouchkil: ila l'base de données khawya, l'lista ghat'bqa khawya
         $products = Product::where('quantity', '>', 0)->get();
         return view('orders.create', compact('clients', 'products'));
     }
 
+    // 3. Enregistrer la vente + Mise à jour Stock
     public function store(Request $request)
     {
         $request->validate([
@@ -37,38 +39,43 @@ class OrderController extends Controller
             return back()->with('error', 'Stock insuffisant!');
         }
 
+        // Création de la commande
         $order = Order::create([
             'client_id' => $request->client_id,
             'total_price' => $product->price * $request->quantity
         ]);
 
+        // Attacher le produit et mettre à jour le pivot
         $order->products()->attach($product->id, [
             'quantity' => $request->quantity,
             'price' => $product->price
         ]);
 
+        // Mise à jour du stock automatique
         $product->decrement('quantity', $request->quantity);
 
-        return redirect()->route('orders.index')->with('success', 'Vente réussie!');
+        return redirect()->route('orders.index')->with('success', 'Vente réussie et stock mis à jour !');
     }
 
+    // 4. Modifier une vente
+    public function edit(Order $order)
+    {
+        $clients = Client::all();
+        $products = Product::all();
+        $order->load('products');
+        
+        return view('orders.edit', compact('order', 'clients', 'products'));
+    }
+
+    // 5. Annuler la vente + Rendre les produits au Stock
     public function destroy(Order $order)
     {
+        // Rendre les quantités au stock avant de supprimer
         foreach ($order->products as $product) {
             $product->increment('quantity', $product->pivot->quantity);
         }
 
         $order->delete();
-        return redirect()->route('orders.index')->with('success', 'Vente annulée!');
-    } 
-public function edit(Order $order)
-{
-    $clients = Client::all();
-    $products = Product::all();
-    
-    // Khassna l'order y'koun fih l'produits dyalu bach n'jbdo quantity
-    $order->load('products');
-    
-    return view('orders.edit', compact('order', 'clients', 'products'));
+        return redirect()->route('orders.index')->with('success', 'Vente annulée et stock restauré !');
+    }
 }
-} // Sddina l'Class hna
